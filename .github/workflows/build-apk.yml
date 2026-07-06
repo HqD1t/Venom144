@@ -1,0 +1,42 @@
+name: Build APK
+
+on:
+  push:
+    branches: [ main, master ]
+  workflow_dispatch:   # кнопка "Run workflow" в GitHub
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up JDK 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - name: Set up Gradle
+        uses: gradle/actions/setup-gradle@v4
+
+      # google-services.json из секрета GOOGLE_SERVICES_JSON (Settings -> Secrets -> Actions).
+      # Если секрета нет — используется заглушка, чтобы проверить, что код компилируется.
+      - name: Put google-services.json
+        run: |
+          if [ -n "${{ secrets.GOOGLE_SERVICES_JSON }}" ]; then
+            echo '${{ secrets.GOOGLE_SERVICES_JSON }}' > app/google-services.json
+            echo "Использую google-services.json из секрета"
+          else
+            cp app/google-services.stub.json app/google-services.json
+            echo "ВНИМАНИЕ: собираю с заглушкой — Firebase в таком APK работать не будет"
+          fi
+
+      - name: Build debug APK
+        run: gradle assembleDebug --no-daemon
+
+      - name: Upload APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: VenomClub-debug
+          path: app/build/outputs/apk/debug/app-debug.apk

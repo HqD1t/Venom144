@@ -1,0 +1,68 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    function signedIn() { return request.auth != null; }
+    function isAdmin() {
+      return signedIn() &&
+        get(/databases/$(database)/documents/users/$(request.auth.uid)).data.isAdmin == true;
+    }
+    function isSelf(uid) { return signedIn() && request.auth.uid == uid; }
+
+    match /users/{uid} {
+      allow read: if isSelf(uid) || isAdmin();
+      allow create: if isSelf(uid);
+      // isAdmin выставляется только вручную в консоли или другим админом
+      allow update: if (isSelf(uid) &&
+                        !request.resource.data.diff(resource.data).affectedKeys().hasAny(['isAdmin']))
+                    || isAdmin();
+    }
+
+    match /posts/{postId} {
+      allow read: if signedIn();
+      allow create, delete: if isAdmin();
+      // пользователи могут только лайкать (менять likes) и инкрементить commentCount
+      allow update: if isAdmin() ||
+        (signedIn() && request.resource.data.diff(resource.data)
+            .affectedKeys().hasOnly(['likes', 'commentCount']));
+
+      match /comments/{commentId} {
+        allow read: if signedIn();
+        allow create: if signedIn() && request.resource.data.uid == request.auth.uid;
+        allow update: if signedIn() &&
+          request.resource.data.diff(resource.data).affectedKeys().hasOnly(['likes']);
+        allow delete: if isAdmin();
+      }
+    }
+
+    match /stations/{id} {
+      allow read: if signedIn();
+      allow write: if isAdmin();
+    }
+
+    match /bookings/{id} {
+      allow read: if isAdmin() || (signedIn() && resource.data.uid == request.auth.uid);
+      allow create: if signedIn() && request.resource.data.uid == request.auth.uid
+                    && request.resource.data.status == 'PENDING';
+      allow update: if isAdmin();
+    }
+
+    match /chats/{uid} {
+      allow read: if isSelf(uid) || isAdmin();
+      allow write: if isSelf(uid) || isAdmin();
+      match /messages/{msgId} {
+        allow read: if isSelf(uid) || isAdmin();
+        allow create: if isSelf(uid) || isAdmin();
+      }
+    }
+
+    match /promocodes/{code} {
+      allow read: if signedIn();
+      allow write: if isAdmin();
+    }
+
+    match /adminTemplates/{id} {
+      allow read, write: if isAdmin();
+    }
+  }
+}

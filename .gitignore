@@ -1,0 +1,9 @@
+.gradle/
+build/
+app/build/
+local.properties
+.idea/
+*.iml
+# реальный конфиг Firebase не коммитим — он идёт через GitHub Secret
+app/google-services.json
+serviceAccountKey.json
