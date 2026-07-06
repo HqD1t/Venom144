@@ -165,7 +165,7 @@ private fun PromoTab(me: UserProfile?) {
                 color = if (it.startsWith("Промокод активирован")) FreeGreen else SunsetCoral)
         }
 
-        if (promos.isEmpty()) Text("Пока нет активных промокодов ☀️", color = BrokenGray)
+        if (promos.isEmpty()) Text("Активных промокодов нет", color = BrokenGray)
         promos.forEach { p ->
             val used = p.usedBy.contains(me?.uid)
             Card(shape = RoundedCornerShape(14.dp),
@@ -176,7 +176,7 @@ private fun PromoTab(me: UserProfile?) {
                         Text(p.description, fontSize = 13.sp, color = VenomWhite)
                         p.activeUntil?.let { Text("до ${fmt.format(it.toDate())}", fontSize = 11.sp, color = BrokenGray) }
                     }
-                    if (used) Text("✔ использован", color = FreeGreen, fontSize = 12.sp)
+                    if (used) Text("Использован", color = FreeGreen, fontSize = 12.sp)
                     else TextButton({ scope.launch { result = ProfileRepo.applyPromo(p.code) } }) {
                         Text("Применить", color = VenomGreen, fontWeight = FontWeight.Bold)
                     }

@@ -102,7 +102,7 @@ object ProfileRepo {
             Demo.promos.value = Demo.promos.value.map {
                 if (it.code == c) it.copy(usedBy = it.usedBy + u) else it
             }
-            return "Промокод активирован! Покажи экран на ресепшн 🎉"
+            return "Промокод активирован. Покажи этот экран на ресепшн"
         }
         val ref = db.document("promocodes/$c")
         val snap = ref.get().await()
@@ -110,7 +110,7 @@ object ProfileRepo {
         val used = (snap.get("usedBy") as? List<*>)?.contains(u) == true
         if (used) return "Уже использован"
         ref.update("usedBy", FieldValue.arrayUnion(u)).await()
-        return "Промокод активирован! Покажи экран на ресепшн 🎉"
+        return "Промокод активирован. Покажи этот экран на ресепшн"
     }
 
     /** Для админа: база пользователей */
@@ -307,7 +307,7 @@ object ChatRepo {
                 Demo.chatMessages.value + (chatUid to (Demo.chatMessages.value[chatUid].orEmpty() + msg))
             Demo.chatHeads.value = Demo.chatHeads.value.map { h ->
                 if (h.uid != chatUid) h
-                else h.copy(lastMessage = text.ifBlank { "📷 Фото" }, lastAt = Demo.now(),
+                else h.copy(lastMessage = text.ifBlank { "Фото" }, lastAt = Demo.now(),
                     unreadForAdmin = if (asAdmin) 0 else h.unreadForAdmin + 1)
             }
             return
@@ -324,7 +324,7 @@ object ChatRepo {
         ).await()
         val head = buildMap<String, Any> {
             put("uid", chatUid)
-            put("lastMessage", text.ifBlank { "📷 Фото" })
+            put("lastMessage", text.ifBlank { "Фото" })
             put("lastAt", Timestamp.now())
             if (asAdmin) put("unreadForAdmin", 0)
             else {

@@ -9,21 +9,35 @@ android {
     namespace = "com.venom.club"
     compileSdk = 35
 
+    // Версия растёт с каждой сборкой CI — телефон видит обновление и ставит поверх
+    val ciVersion = (System.getenv("VERSION_CODE") ?: "1").toInt()
+
     defaultConfig {
         applicationId = "com.venom.club"
         minSdk = 26
         targetSdk = 35
-        versionCode = 1
-        versionName = "1.0"
+        versionCode = ciVersion
+        versionName = "1.$ciVersion"
+    }
+
+    // Постоянный ключ подписи: одна подпись у всех сборок = обновление без удаления
+    signingConfigs {
+        create("venom") {
+            storeFile = file("../venom.keystore")
+            storePassword = "venom2026"
+            keyAlias = "venom"
+            keyPassword = "venom2026"
+        }
     }
 
     buildTypes {
         release {
             isMinifyEnabled = true
             proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro")
-            // Подпись debug-ключом, чтобы release-APK ставился без своего keystore.
-            // Для публикации в сторы заменить на настоящий ключ!
-            signingConfig = signingConfigs.getByName("debug")
+            signingConfig = signingConfigs.getByName("venom")
+        }
+        debug {
+            signingConfig = signingConfigs.getByName("venom")
         }
     }
     compileOptions {

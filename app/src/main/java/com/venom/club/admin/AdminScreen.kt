@@ -137,7 +137,7 @@ private fun AdminPosts() {
                 Row(Modifier.padding(12.dp), verticalAlignment = Alignment.CenterVertically) {
                     Column(Modifier.weight(1f)) {
                         Text(p.text.take(80), color = VenomWhite, fontSize = 13.sp)
-                        Text("${p.createdAt?.toDate()?.let { dtFmt.format(it) }} · ❤ ${p.likes.size} · 💬 ${p.commentCount}",
+                        Text("${p.createdAt?.toDate()?.let { dtFmt.format(it) }} · лайков: ${p.likes.size} · комм.: ${p.commentCount}",
                             fontSize = 11.sp, color = BrokenGray)
                     }
                     IconButton({ editPost = p }) {
@@ -176,7 +176,7 @@ private fun AdminBookings() {
     val scope = rememberCoroutineScope()
     val pending by StationRepo.pendingBookingsFlow().collectAsState(initial = emptyList())
     LazyColumn(contentPadding = PaddingValues(16.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
-        if (pending.isEmpty()) item { Text("Нет новых заявок 😎", color = BrokenGray) }
+        if (pending.isEmpty()) item { Text("Новых заявок нет", color = BrokenGray) }
         items(pending, key = { it.id }) { b ->
             Card(colors = CardDefaults.cardColors(containerColor = VenomSurface),
                 shape = RoundedCornerShape(14.dp)) {
@@ -236,7 +236,7 @@ private fun AdminUsers() {
                             Text(u.nickname, fontWeight = FontWeight.Bold, color = VenomWhite)
                             Text(u.phone, fontSize = 12.sp, color = BrokenGray)
                             if (u.adminNote.isNotBlank())
-                                Text("📝 ${u.adminNote}", fontSize = 12.sp, color = AquaPool)
+                                Text("Заметка: ${u.adminNote}", fontSize = 12.sp, color = TextMuted)
                         }
                         IconButton({ scope.launch {
                             ProfileRepo.adminUpdateUser(u.uid, mapOf("favorite" to !u.favorite))
@@ -348,11 +348,11 @@ private fun AdminChats(me: UserProfile) {
                         Spacer(Modifier.width(10.dp))
                         Column(Modifier.weight(1f)) {
                             Row {
-                                if (h.favorite) Text("⭐ ", fontSize = 13.sp)
+                                if (h.favorite) Text("★ ", fontSize = 13.sp, color = SoftWhite)
                                 Text(h.nickname, fontWeight = FontWeight.Bold, color = VenomWhite)
                             }
                             Text(h.lastMessage.take(40), fontSize = 12.sp, color = BrokenGray)
-                            if (h.note.isNotBlank()) Text("📝 ${h.note}", fontSize = 11.sp, color = AquaPool)
+                            if (h.note.isNotBlank()) Text("Заметка: ${h.note}", fontSize = 11.sp, color = TextMuted)
                         }
                         Column(horizontalAlignment = Alignment.End) {
                             Text(h.lastAt?.toDate()?.let { dtFmt.format(it) } ?: "",

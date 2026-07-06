@@ -95,7 +95,7 @@ private fun PhoneStep(loading: Boolean, onSend: (String) -> Unit, onDemo: () -> 
         GradientButton("Получить код", loading) { onSend(phone) }
         Spacer(Modifier.height(12.dp))
         TextButton(onClick = onDemo) {
-            Text("🔧 Демо-режим — тест без регистрации", color = AquaPool, fontSize = 14.sp)
+            Text("Демо-режим · тест без регистрации", color = TextMuted, fontSize = 14.sp)
         }
     }
 }
@@ -192,21 +192,7 @@ fun PinStep(title: String, onComplete: (String) -> Unit) {
 
 @Composable
 fun GradientButton(text: String, loading: Boolean = false, enabled: Boolean = true, onClick: () -> Unit) {
-    Button(
-        onClick = onClick, enabled = enabled && !loading,
-        colors = ButtonDefaults.buttonColors(containerColor = androidx.compose.ui.graphics.Color.Transparent),
-        contentPadding = PaddingValues(),
-        modifier = Modifier.fillMaxWidth().height(52.dp)
-    ) {
-        Box(
-            // Бегущий блик по зелёному градиенту
-            Modifier.fillMaxSize().background(shimmerGradient(), RoundedCornerShape(16.dp)),
-            contentAlignment = Alignment.Center
-        ) {
-            if (loading) CircularProgressIndicator(Modifier.size(24.dp), color = VenomBlack)
-            else Text(text, color = VenomBlack, fontWeight = FontWeight.Bold, fontSize = 16.sp)
-        }
-    }
+    VenomButton(text = text, loading = loading, enabled = enabled, onClick = onClick)
 }
 
 const val TERMS_TEXT = """ПОЛЬЗОВАТЕЛЬСКОЕ СОГЛАШЕНИЕ И ПУБЛИЧНАЯ ОФЕРТА

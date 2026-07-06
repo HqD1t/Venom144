@@ -106,12 +106,12 @@ fun ChatScreen(me: UserProfile?, chatUid: String? = null, asAdmin: Boolean = fal
             confirmButton = {
                 Row {
                     if (m.text.isNotBlank()) TextButton({ editMsg = m; actionMsg = null }) {
-                        Text("✏️ Изменить", color = AquaPool)
+                        Text("Изменить", color = VenomGreen)
                     }
                     TextButton({
                         scope.launch { ChatRepo.deleteMessage(uid, m.id) }
                         actionMsg = null
-                    }) { Text("🗑 Удалить", color = BusyRed) }
+                    }) { Text("Удалить", color = BusyRed) }
                 }
             },
             dismissButton = { TextButton({ actionMsg = null }) { Text("Отмена", color = BrokenGray) } }

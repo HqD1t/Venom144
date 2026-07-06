@@ -37,6 +37,8 @@ jobs:
       # Release быстрее debug в разы — для тестов на телефоне бери именно его
       - name: Build APKs
         run: gradle assembleDebug assembleRelease --no-daemon
+        env:
+          VERSION_CODE: ${{ github.run_number }}
 
       - name: Upload release APK (быстрый — ставь этот)
         uses: actions/upload-artifact@v4

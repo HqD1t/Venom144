@@ -70,8 +70,10 @@ fun BookingScreen(me: UserProfile?) {
 
     Box(Modifier.fillMaxSize().summerBackground()) {
         Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(16.dp)) {
-            Text("🎮 Выберите компьютер или PS5",
+            Text("Бронирование",
                 fontSize = 22.sp, fontWeight = FontWeight.Black, color = VenomWhite)
+            Text("Выбери компьютер или PS5 на карте клуба",
+                fontSize = 13.sp, color = TextMuted)
             Spacer(Modifier.height(8.dp))
             Legend()
             Spacer(Modifier.height(12.dp))
@@ -86,7 +88,7 @@ fun BookingScreen(me: UserProfile?) {
             scope.launch {
                 if (me != null) {
                     StationRepo.requestBooking(st, me, start, hours)
-                    snackbar.showSnackbar("Заявка отправлена! Ждём подтверждения админа 🤙")
+                    snackbar.showSnackbar("Заявка отправлена. Ждём подтверждения администратора")
                 }
                 selected = null
             }
@@ -102,10 +104,10 @@ private fun ClubMap(stations: List<Station>, onStationClick: (Station) -> Unit) 
         Box(Modifier.fillMaxWidth().height(u * MAP_HEIGHT_UNITS)) {
 
             // Статичные объекты
-            StaticRoom("🚻\nWC", MapPos(4f, 40f, 14f, 12f), u, BrokenGray)
-            StaticRoom("⛔\nТех.\nпомещение", MapPos(16f, 56f, 14f, 14f), u, Color(0xFF7A2B2B))
-            StaticRoom("👤\nАДМИН", MapPos(38f, 166f, 18f, 12f), u, BrokenGray)
-            StaticRoom("🚪\nВход", MapPos(80f, 166f, 14f, 12f), u, Color(0xFF8A6B4A))
+            StaticRoom("WC", MapPos(4f, 40f, 14f, 12f), u, BrokenGray)
+            StaticRoom("Тех.\nпомещение", MapPos(16f, 56f, 14f, 14f), u, BrokenGray)
+            StaticRoom("Админ", MapPos(38f, 166f, 18f, 12f), u, BrokenGray)
+            StaticRoom("Вход", MapPos(80f, 166f, 14f, 12f), u, BrokenGray)
 
             stations.forEach { st ->
                 val pos = stationPos[st.number] ?: return@forEach
@@ -126,8 +128,8 @@ private fun StaticRoom(label: String, pos: MapPos, u: androidx.compose.ui.unit.D
             .border(1.dp, tint.copy(alpha = .6f), RoundedCornerShape(10.dp)),
         contentAlignment = Alignment.Center
     ) {
-        Text(label, fontSize = 9.sp, color = VenomWhite.copy(alpha = .8f),
-            textAlign = TextAlign.Center, lineHeight = 11.sp)
+        Text(label, fontSize = 10.sp, color = TextMuted,
+            textAlign = TextAlign.Center, lineHeight = 12.sp)
     }
 }
 
@@ -148,18 +150,17 @@ private fun StationCell(st: Station, pos: MapPos, u: androidx.compose.ui.unit.Dp
         verticalArrangement = Arrangement.Center
     ) {
         if (big) {
-            Text("PS 5", color = VenomWhite, fontSize = 13.sp, fontWeight = FontWeight.Bold)
-            Text(st.title, color = VenomWhite.copy(alpha = .7f), fontSize = 9.sp, textAlign = TextAlign.Center)
-            Text("${st.number}", color = color.copy(alpha = .7f), fontSize = 9.sp)
+            Text("PS5", color = VenomWhite, fontSize = 14.sp, fontWeight = FontWeight.Bold)
+            Text(st.title, color = TextMuted, fontSize = 10.sp, textAlign = TextAlign.Center)
         } else {
-            Text("${st.number}", color = VenomWhite, fontSize = 13.sp, fontWeight = FontWeight.Bold)
+            Text("${st.number}", color = VenomWhite, fontSize = 14.sp, fontWeight = FontWeight.Bold)
         }
         when {
             st.status == StationStatus.BOOKED.name && st.bookedUntil != null ->
-                Text("до ${timeFmt.format(st.bookedUntil.toDate())}", fontSize = 7.sp,
-                    color = BookedBlue, lineHeight = 8.sp, textAlign = TextAlign.Center)
+                Text("до ${timeFmt.format(st.bookedUntil.toDate())}", fontSize = 8.sp,
+                    color = BookedBlue, lineHeight = 9.sp, textAlign = TextAlign.Center)
             st.status == StationStatus.BROKEN.name ->
-                Text("🔧", fontSize = 8.sp, lineHeight = 9.sp)
+                Text("рем.", fontSize = 8.sp, color = BrokenGray, lineHeight = 9.sp)
         }
     }
 }
