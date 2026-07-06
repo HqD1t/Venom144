@@ -55,9 +55,12 @@ fun NewsScreen(me: UserProfile?, onOpenComments: (String) -> Unit) {
         items(posts, key = { it.id }) { post ->
             PostCard(
                 post = post, myUid = me?.uid ?: "",
-                onLike = { scope.launch {
-                    NewsRepo.toggleLike(post.id, me?.uid ?: return@launch, post.likes.contains(me.uid))
-                } },
+                onLike = {
+                    val uid = me?.uid
+                    if (uid != null) scope.launch {
+                        NewsRepo.toggleLike(post.id, uid, post.likes.contains(uid))
+                    }
+                },
                 onComments = { onOpenComments(post.id) }
             )
         }
@@ -142,9 +145,12 @@ fun CommentsScreen(postId: String, me: UserProfile?, onBack: () -> Unit) {
             verticalArrangement = Arrangement.spacedBy(10.dp)) {
             items(comments, key = { it.id }) { c ->
                 CommentItem(c, me?.uid ?: "",
-                    onLike = { scope.launch {
-                        NewsRepo.toggleCommentLike(postId, c.id, me?.uid ?: return@launch, c.likes.contains(me.uid))
-                    } },
+                    onLike = {
+                        val uid = me?.uid
+                        if (uid != null) scope.launch {
+                            NewsRepo.toggleCommentLike(postId, c.id, uid, c.likes.contains(uid))
+                        }
+                    },
                     onReply = { replyTo = c })
             }
         }
