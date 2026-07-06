@@ -19,6 +19,8 @@ jobs:
 
       - name: Set up Gradle
         uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: "8.9"   # AGP 8.5.x несовместим с Gradle 9
 
       # google-services.json из секрета GOOGLE_SERVICES_JSON (Settings -> Secrets -> Actions).
       # Если секрета нет — используется заглушка, чтобы проверить, что код компилируется.
