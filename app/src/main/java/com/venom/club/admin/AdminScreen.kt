@@ -63,6 +63,8 @@ private fun AdminPosts() {
     var text by remember { mutableStateOf("") }
     var image by remember { mutableStateOf<Uri?>(null) }
     var busy by remember { mutableStateOf(false) }
+    var showPreview by remember { mutableStateOf(false) }
+    var editPost by remember { mutableStateOf<Post?>(null) }
     val pick = rememberLauncherForActivityResult(ActivityResultContracts.GetContent()) { image = it }
     val posts by NewsRepo.postsFlow().collectAsState(initial = emptyList())
 
@@ -74,11 +76,29 @@ private fun AdminPosts() {
                     Text("Новый пост", fontWeight = FontWeight.Bold, color = VenomWhite)
                     OutlinedTextField(text, { text = it }, Modifier.fillMaxWidth().height(120.dp),
                         placeholder = { Text("Текст поста...") })
+                    // Прикреплённое фото: превью + удалить
+                    image?.let {
+                        Spacer(Modifier.height(8.dp))
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            AsyncImage(it, null,
+                                Modifier.size(64.dp).clip(RoundedCornerShape(10.dp)))
+                            Spacer(Modifier.width(8.dp))
+                            Text("Фото прикреплено", color = AquaPool, fontSize = 13.sp,
+                                modifier = Modifier.weight(1f))
+                            IconButton({ image = null }) {
+                                Icon(Icons.Filled.Close, "Убрать фото", tint = BusyRed)
+                            }
+                        }
+                    }
                     Spacer(Modifier.height(8.dp))
                     Row(verticalAlignment = Alignment.CenterVertically) {
                         TextButton({ pick.launch("image/*") }) {
                             Icon(Icons.Filled.Image, null, tint = AquaPool)
-                            Text(if (image != null) " Фото ✔" else " Фото", color = AquaPool)
+                            Text(" Фото", color = AquaPool)
+                        }
+                        TextButton(enabled = text.isNotBlank(), onClick = { showPreview = true }) {
+                            Icon(Icons.Filled.Visibility, null, tint = SummerYellow)
+                            Text(" Предпросмотр", color = SummerYellow)
                         }
                         Spacer(Modifier.weight(1f))
                         Button(
@@ -96,6 +116,21 @@ private fun AdminPosts() {
                 }
             }
         }
+        // Предпросмотр — как увидят пользователи
+        if (showPreview) {
+            item {
+                Column {
+                    Text("Предпросмотр:", color = SummerYellow, fontSize = 13.sp,
+                        fontWeight = FontWeight.Bold)
+                    Spacer(Modifier.height(6.dp))
+                    com.venom.club.news.PostCard(
+                        post = Post(text = text.trim(), imageUrl = image?.toString() ?: "",
+                            createdAt = com.google.firebase.Timestamp.now()),
+                        myUid = "", onLike = {}, onComments = {})
+                    TextButton({ showPreview = false }) { Text("Скрыть", color = BrokenGray) }
+                }
+            }
+        }
         items(posts, key = { it.id }) { p ->
             Card(colors = CardDefaults.cardColors(containerColor = VenomSurface),
                 shape = RoundedCornerShape(14.dp)) {
@@ -105,12 +140,33 @@ private fun AdminPosts() {
                         Text("${p.createdAt?.toDate()?.let { dtFmt.format(it) }} · ❤ ${p.likes.size} · 💬 ${p.commentCount}",
                             fontSize = 11.sp, color = BrokenGray)
                     }
+                    IconButton({ editPost = p }) {
+                        Icon(Icons.Filled.Edit, "Редактировать", tint = AquaPool)
+                    }
                     IconButton({ scope.launch { NewsRepo.deletePost(p.id) } }) {
                         Icon(Icons.Filled.Delete, "Удалить", tint = BusyRed)
                     }
                 }
             }
         }
+    }
+
+    // Редактирование опубликованного поста
+    editPost?.let { p ->
+        var newText by remember(p.id) { mutableStateOf(p.text) }
+        AlertDialog(
+            onDismissRequest = { editPost = null },
+            containerColor = VenomSurface,
+            title = { Text("Редактировать пост", color = VenomWhite) },
+            text = { OutlinedTextField(newText, { newText = it }, Modifier.fillMaxWidth().height(140.dp)) },
+            confirmButton = {
+                TextButton(enabled = newText.isNotBlank(), onClick = {
+                    scope.launch { NewsRepo.updatePost(p.id, newText.trim()) }
+                    editPost = null
+                }) { Text("Сохранить", color = VenomGreen) }
+            },
+            dismissButton = { TextButton({ editPost = null }) { Text("Отмена", color = BrokenGray) } }
+        )
     }
 }
 

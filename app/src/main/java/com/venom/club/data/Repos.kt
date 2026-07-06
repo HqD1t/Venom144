@@ -92,6 +92,27 @@ object ProfileRepo {
         if (Demo.enabled) Demo.promos
         else db.collection("promocodes").snapshots().map { it.toObjects<PromoCode>() }
 
+    /** Применить промокод (по коду). Возвращает сообщение результата. */
+    suspend fun applyPromo(code: String): String {
+        val c = code.trim().uppercase()
+        val u = uid ?: return "Нет авторизации"
+        if (Demo.enabled) {
+            val promo = Demo.promos.value.find { it.code == c } ?: return "Промокод не найден"
+            if (promo.usedBy.contains(u)) return "Уже использован"
+            Demo.promos.value = Demo.promos.value.map {
+                if (it.code == c) it.copy(usedBy = it.usedBy + u) else it
+            }
+            return "Промокод активирован! Покажи экран на ресепшн 🎉"
+        }
+        val ref = db.document("promocodes/$c")
+        val snap = ref.get().await()
+        if (!snap.exists()) return "Промокод не найден"
+        val used = (snap.get("usedBy") as? List<*>)?.contains(u) == true
+        if (used) return "Уже использован"
+        ref.update("usedBy", FieldValue.arrayUnion(u)).await()
+        return "Промокод активирован! Покажи экран на ресепшн 🎉"
+    }
+
     /** Для админа: база пользователей */
     fun allUsersFlow(): Flow<List<UserProfile>> =
         if (Demo.enabled) Demo.users
@@ -183,6 +204,15 @@ object NewsRepo {
             return
         }
         db.document("posts/$postId").delete().await()
+    }
+
+    /** Админ: редактировать текст поста */
+    suspend fun updatePost(postId: String, text: String) {
+        if (Demo.enabled) {
+            Demo.posts.value = Demo.posts.value.map { if (it.id == postId) it.copy(text = text) else it }
+            return
+        }
+        db.document("posts/$postId").update("text", text).await()
     }
 }
 
@@ -304,6 +334,28 @@ object ChatRepo {
             }
         }
         db.document("chats/$chatUid").set(head, com.google.firebase.firestore.SetOptions.merge()).await()
+    }
+
+    /** Редактировать своё сообщение */
+    suspend fun editMessage(chatUid: String, msgId: String, text: String) {
+        if (Demo.enabled) {
+            Demo.chatMessages.value = Demo.chatMessages.value + (chatUid to
+                Demo.chatMessages.value[chatUid].orEmpty().map {
+                    if (it.id == msgId) it.copy(text = text) else it
+                })
+            return
+        }
+        db.document("chats/$chatUid/messages/$msgId").update("text", text).await()
+    }
+
+    /** Удалить своё сообщение */
+    suspend fun deleteMessage(chatUid: String, msgId: String) {
+        if (Demo.enabled) {
+            Demo.chatMessages.value = Demo.chatMessages.value + (chatUid to
+                Demo.chatMessages.value[chatUid].orEmpty().filterNot { it.id == msgId })
+            return
+        }
+        db.document("chats/$chatUid/messages/$msgId").delete().await()
     }
 
     fun chatHeadsFlow(): Flow<List<ChatHead>> =

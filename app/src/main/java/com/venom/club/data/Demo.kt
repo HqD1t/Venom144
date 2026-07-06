@@ -47,8 +47,10 @@ object Demo {
         for (n in 15..17) add(Station(id = "st$n", number = n, title = "PC $n", type = "PC", zone = "Общий зал",
             status = if (n == 16) StationStatus.BROKEN.name else StationStatus.FREE.name,
             statusNote = if (n == 16) "ждём видеокарту" else ""))
-        for (n in 18..21) add(Station(id = "st$n", number = n, title = "PS5 №${n - 17}", type = "PS5", zone = "Видеозал PS5"))
+        for (n in 18..21) add(Station(id = "st$n", number = n, title = "Консоль $n", type = "PS5", zone = "Консоли"))
         add(Station(id = "st22", number = 22, title = "VIP 22", type = "PC", zone = "VIP"))
+        for (n in 23..26) add(Station(id = "st$n", number = n, title = "${n - 22} комната", type = "PS5", zone = "PS5 комнаты",
+            status = if (n == 24) StationStatus.BUSY.name else StationStatus.FREE.name))
     })
 
     val bookings = MutableStateFlow(listOf(

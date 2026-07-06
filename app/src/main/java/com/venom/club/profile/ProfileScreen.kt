@@ -54,9 +54,17 @@ fun ProfileScreen(me: UserProfile?) {
     Column(Modifier.fillMaxSize().summerBackground().verticalScroll(rememberScrollState()).padding(16.dp),
         horizontalAlignment = Alignment.CenterHorizontally) {
 
-        // Аватар — клик меняет фото
+        // Аватар — клик меняет фото; перед загрузкой кропаем в квадрат и сжимаем
+        val ctx = androidx.compose.ui.platform.LocalContext.current
         val pickAvatar = rememberLauncherForActivityResult(ActivityResultContracts.GetContent()) { uri ->
-            uri?.let { scope.launch { ProfileRepo.uploadAvatar(it) } }
+            uri?.let {
+                scope.launch {
+                    val prepared = kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.IO) {
+                        com.venom.club.util.ImageUtils.prepareAvatar(ctx, it)
+                    }
+                    ProfileRepo.uploadAvatar(prepared)
+                }
+            }
         }
         Box(contentAlignment = Alignment.BottomEnd) {
             AsyncImage(
@@ -133,7 +141,30 @@ private fun StatCard(label: String, value: String, icon: androidx.compose.ui.gra
 private fun PromoTab(me: UserProfile?) {
     val promos by ProfileRepo.promoCodesFlow().collectAsState(initial = emptyList())
     val fmt = SimpleDateFormat("d MMMM", Locale("ru"))
+    val scope = rememberCoroutineScope()
+    var input by remember { mutableStateOf("") }
+    var result by remember { mutableStateOf<String?>(null) }
+
     Column(verticalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.fillMaxWidth()) {
+        // Ввод промокода вручную
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            OutlinedTextField(
+                value = input, onValueChange = { input = it.uppercase(); result = null },
+                placeholder = { Text("Ввести промокод") }, singleLine = true,
+                shape = RoundedCornerShape(14.dp), modifier = Modifier.weight(1f)
+            )
+            Spacer(Modifier.width(8.dp))
+            Button(
+                enabled = input.isNotBlank(),
+                onClick = { scope.launch { result = ProfileRepo.applyPromo(input) } },
+                colors = ButtonDefaults.buttonColors(containerColor = VenomGreen)
+            ) { Text("ОК", color = VenomBlack, fontWeight = FontWeight.Bold) }
+        }
+        result?.let {
+            Text(it, fontSize = 13.sp,
+                color = if (it.startsWith("Промокод активирован")) FreeGreen else SunsetCoral)
+        }
+
         if (promos.isEmpty()) Text("Пока нет активных промокодов ☀️", color = BrokenGray)
         promos.forEach { p ->
             val used = p.usedBy.contains(me?.uid)
@@ -146,6 +177,9 @@ private fun PromoTab(me: UserProfile?) {
                         p.activeUntil?.let { Text("до ${fmt.format(it.toDate())}", fontSize = 11.sp, color = BrokenGray) }
                     }
                     if (used) Text("✔ использован", color = FreeGreen, fontSize = 12.sp)
+                    else TextButton({ scope.launch { result = ProfileRepo.applyPromo(p.code) } }) {
+                        Text("Применить", color = VenomGreen, fontWeight = FontWeight.Bold)
+                    }
                 }
             }
         }
@@ -154,7 +188,15 @@ private fun PromoTab(me: UserProfile?) {
 
 @Composable
 private fun SettingsTab() {
+    var showTerms by remember { mutableStateOf(false) }
     Column(verticalArrangement = Arrangement.spacedBy(4.dp), modifier = Modifier.fillMaxWidth()) {
+        // Пользовательское соглашение — всегда в открытом доступе
+        ListItem(
+            headlineContent = { Text("Пользовательское соглашение и оферта") },
+            leadingContent = { Icon(Icons.Filled.Description, null, tint = SummerYellow) },
+            colors = ListItemDefaults.colors(containerColor = VenomSurface),
+            modifier = Modifier.clip(RoundedCornerShape(14.dp)).clickable { showTerms = true }
+        )
         ListItem(
             headlineContent = { Text("Выйти из аккаунта") },
             leadingContent = { Icon(Icons.AutoMirrored.Filled.Logout, null, tint = BusyRed) },
@@ -171,6 +213,20 @@ private fun SettingsTab() {
             leadingContent = { Icon(Icons.Filled.Info, null, tint = AquaPool) },
             colors = ListItemDefaults.colors(containerColor = VenomSurface),
             modifier = Modifier.clip(RoundedCornerShape(14.dp))
+        )
+    }
+
+    if (showTerms) {
+        AlertDialog(
+            onDismissRequest = { showTerms = false },
+            containerColor = VenomSurface,
+            title = { Text("Соглашение и оферта", color = VenomWhite) },
+            text = {
+                Column(Modifier.height(400.dp).verticalScroll(rememberScrollState())) {
+                    Text(com.venom.club.auth.TERMS_TEXT, color = VenomWhite.copy(alpha = .85f), fontSize = 13.sp)
+                }
+            },
+            confirmButton = { TextButton({ showTerms = false }) { Text("Закрыть", color = VenomGreen) } }
         )
     }
 }

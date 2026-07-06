@@ -1,6 +1,8 @@
 package com.venom.club.navigation
 
 import android.app.Activity
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.animation.*
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.spring
@@ -48,6 +50,15 @@ fun VenomNavGraph(activity: Activity) {
     val me by remember(authed) {
         ProfileRepo.uid?.let { ProfileRepo.profileFlow(it) } ?: flowOf(null)
     }.collectAsState(initial = null)
+
+    // Разрешение на уведомления запрашиваем явно (Android 13+), а не молча
+    val notifPermission = rememberLauncherForActivityResult(
+        ActivityResultContracts.RequestPermission()) {}
+    LaunchedEffect(Unit) {
+        if (android.os.Build.VERSION.SDK_INT >= 33) {
+            notifPermission.launch(android.Manifest.permission.POST_NOTIFICATIONS)
+        }
+    }
 
     Scaffold(
         containerColor = VenomBlack,

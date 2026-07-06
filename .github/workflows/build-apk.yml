@@ -34,10 +34,17 @@ jobs:
             echo "ВНИМАНИЕ: собираю с заглушкой — Firebase в таком APK работать не будет"
           fi
 
-      - name: Build debug APK
-        run: gradle assembleDebug --no-daemon
+      # Release быстрее debug в разы — для тестов на телефоне бери именно его
+      - name: Build APKs
+        run: gradle assembleDebug assembleRelease --no-daemon
 
-      - name: Upload APK
+      - name: Upload release APK (быстрый — ставь этот)
+        uses: actions/upload-artifact@v4
+        with:
+          name: VenomClub-release
+          path: app/build/outputs/apk/release/app-release.apk
+
+      - name: Upload debug APK
         uses: actions/upload-artifact@v4
         with:
           name: VenomClub-debug

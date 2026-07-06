@@ -21,6 +21,9 @@ android {
         release {
             isMinifyEnabled = true
             proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro")
+            // Подпись debug-ключом, чтобы release-APK ставился без своего keystore.
+            // Для публикации в сторы заменить на настоящий ключ!
+            signingConfig = signingConfigs.getByName("debug")
         }
     }
     compileOptions {
@@ -54,6 +57,7 @@ dependencies {
 
     // Изображения
     implementation("io.coil-kt:coil-compose:2.7.0")
+    implementation("androidx.exifinterface:exifinterface:1.3.7")
 
     // Мини-сервер Gizmo (Retrofit)
     implementation("com.squareup.retrofit2:retrofit:2.11.0")

@@ -1,26 +1,21 @@
 package com.venom.club.booking
 
 import androidx.compose.animation.animateColorAsState
-import androidx.compose.animation.core.*
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.lazy.grid.GridCells
-import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
-import androidx.compose.foundation.lazy.grid.items
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Computer
-import androidx.compose.material.icons.filled.SportsEsports
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.draw.scale
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.google.firebase.Timestamp
@@ -40,6 +35,32 @@ fun statusColor(s: Station): Color = when (StationStatus.valueOf(s.status)) {
     StationStatus.BROKEN, StationStatus.MAINTENANCE -> BrokenGray
 }
 
+/** Позиция на карте клуба: в процентах ширины (x, w) и в тех же единицах по вертикали (y, h). */
+private data class MapPos(val x: Float, val y: Float, val w: Float = 10f, val h: Float = 10f)
+
+/** Раскладка по схеме клуба VENOM (числа = номер станции). */
+private val stationPos = mapOf(
+    // ПК 1-5 — верхний ряд
+    1 to MapPos(34f, 4f), 2 to MapPos(45f, 4f), 3 to MapPos(56f, 4f), 4 to MapPos(67f, 4f), 5 to MapPos(78f, 4f),
+    // ПК 6-10 — правая колонка (верх)
+    6 to MapPos(86f, 14f), 7 to MapPos(86f, 25f), 8 to MapPos(86f, 36f), 9 to MapPos(86f, 47f), 10 to MapPos(86f, 58f),
+    // ПК 11-14 — правая колонка (середина)
+    11 to MapPos(86f, 73f), 12 to MapPos(86f, 84f), 13 to MapPos(86f, 95f), 14 to MapPos(86f, 106f),
+    // ПК 15-17 — правая колонка (низ)
+    15 to MapPos(86f, 121f), 16 to MapPos(86f, 132f), 17 to MapPos(86f, 143f),
+    // Консоли 18-21 — средняя колонка (снизу вверх)
+    21 to MapPos(44f, 73f), 20 to MapPos(44f, 84f), 19 to MapPos(44f, 95f), 18 to MapPos(44f, 106f),
+    // VIP 22 — возле тех.помещения
+    22 to MapPos(31f, 60f),
+    // PS5 комнаты (большие)
+    26 to MapPos(12f, 2f, 18f, 14f),    // 4 комната — верхний левый угол
+    25 to MapPos(22f, 118f, 18f, 14f),  // 3 комната
+    24 to MapPos(22f, 134f, 18f, 14f),  // 2 комната
+    23 to MapPos(22f, 150f, 18f, 14f),  // 1 комната
+)
+
+private const val MAP_HEIGHT_UNITS = 182f
+
 @Composable
 fun BookingScreen(me: UserProfile?) {
     val stations by StationRepo.stationsFlow().collectAsState(initial = emptyList())
@@ -48,28 +69,14 @@ fun BookingScreen(me: UserProfile?) {
     val snackbar = remember { SnackbarHostState() }
 
     Box(Modifier.fillMaxSize().summerBackground()) {
-        Column(Modifier.fillMaxSize().padding(16.dp)) {
-            Text("Бронирование", fontSize = 24.sp, fontWeight = FontWeight.Black, color = VenomWhite)
+        Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(16.dp)) {
+            Text("🎮 Выберите компьютер или PS5",
+                fontSize = 22.sp, fontWeight = FontWeight.Black, color = VenomWhite)
             Spacer(Modifier.height(8.dp))
             Legend()
             Spacer(Modifier.height(12.dp))
-
-            val zones = stations.groupBy { it.zone }
-            LazyVerticalGrid(
-                columns = GridCells.Fixed(4),
-                verticalArrangement = Arrangement.spacedBy(10.dp),
-                horizontalArrangement = Arrangement.spacedBy(10.dp)
-            ) {
-                zones.forEach { (zone, list) ->
-                    item(span = { androidx.compose.foundation.lazy.grid.GridItemSpan(4) }) {
-                        Text(zone, color = SummerYellow, fontWeight = FontWeight.Bold,
-                            modifier = Modifier.padding(top = 8.dp))
-                    }
-                    items(list, key = { it.id }) { st ->
-                        StationCell(st) { selected = st }
-                    }
-                }
-            }
+            ClubMap(stations) { selected = it }
+            Spacer(Modifier.height(24.dp))
         }
         SnackbarHost(snackbar, Modifier.align(Alignment.BottomCenter))
     }
@@ -87,6 +94,76 @@ fun BookingScreen(me: UserProfile?) {
     }
 }
 
+/** Карта клуба: станции на своих местах + статичные объекты (WC, тех.помещение, вход, админ). */
+@Composable
+private fun ClubMap(stations: List<Station>, onStationClick: (Station) -> Unit) {
+    BoxWithConstraints(Modifier.fillMaxWidth()) {
+        val u = maxWidth / 100f
+        Box(Modifier.fillMaxWidth().height(u * MAP_HEIGHT_UNITS)) {
+
+            // Статичные объекты
+            StaticRoom("🚻\nWC", MapPos(4f, 40f, 14f, 12f), u, BrokenGray)
+            StaticRoom("⛔\nТех.\nпомещение", MapPos(16f, 56f, 14f, 14f), u, Color(0xFF7A2B2B))
+            StaticRoom("👤\nАДМИН", MapPos(38f, 166f, 18f, 12f), u, BrokenGray)
+            StaticRoom("🚪\nВход", MapPos(80f, 166f, 14f, 12f), u, Color(0xFF8A6B4A))
+
+            stations.forEach { st ->
+                val pos = stationPos[st.number] ?: return@forEach
+                StationCell(st, pos, u, onClick = { onStationClick(st) })
+            }
+        }
+    }
+}
+
+@Composable
+private fun StaticRoom(label: String, pos: MapPos, u: androidx.compose.ui.unit.Dp, tint: Color) {
+    Box(
+        Modifier
+            .offset(x = u * pos.x, y = u * pos.y)
+            .size(u * pos.w, u * pos.h)
+            .clip(RoundedCornerShape(10.dp))
+            .background(VenomSurface)
+            .border(1.dp, tint.copy(alpha = .6f), RoundedCornerShape(10.dp)),
+        contentAlignment = Alignment.Center
+    ) {
+        Text(label, fontSize = 9.sp, color = VenomWhite.copy(alpha = .8f),
+            textAlign = TextAlign.Center, lineHeight = 11.sp)
+    }
+}
+
+@Composable
+private fun StationCell(st: Station, pos: MapPos, u: androidx.compose.ui.unit.Dp, onClick: () -> Unit) {
+    val color by animateColorAsState(statusColor(st), tween(400), label = "stColor")
+    val big = pos.w > 12f
+    Column(
+        Modifier
+            .offset(x = u * pos.x, y = u * pos.y)
+            .size(u * pos.w, u * pos.h)
+            .bouncyClickable(enabled = st.status == StationStatus.FREE.name, onClick = onClick)
+            .clip(RoundedCornerShape(if (big) 12.dp else 10.dp))
+            .background(VenomSurface)
+            .border(2.dp, color, RoundedCornerShape(if (big) 12.dp else 10.dp))
+            .padding(2.dp),
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.Center
+    ) {
+        if (big) {
+            Text("PS 5", color = VenomWhite, fontSize = 13.sp, fontWeight = FontWeight.Bold)
+            Text(st.title, color = VenomWhite.copy(alpha = .7f), fontSize = 9.sp, textAlign = TextAlign.Center)
+            Text("${st.number}", color = color.copy(alpha = .7f), fontSize = 9.sp)
+        } else {
+            Text("${st.number}", color = VenomWhite, fontSize = 13.sp, fontWeight = FontWeight.Bold)
+        }
+        when {
+            st.status == StationStatus.BOOKED.name && st.bookedUntil != null ->
+                Text("до ${timeFmt.format(st.bookedUntil.toDate())}", fontSize = 7.sp,
+                    color = BookedBlue, lineHeight = 8.sp, textAlign = TextAlign.Center)
+            st.status == StationStatus.BROKEN.name ->
+                Text("🔧", fontSize = 8.sp, lineHeight = 9.sp)
+        }
+    }
+}
+
 @Composable
 private fun Legend() {
     Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
@@ -98,39 +175,6 @@ private fun Legend() {
                     Text(label, fontSize = 11.sp, color = VenomWhite.copy(alpha = .7f))
                 }
             }
-    }
-}
-
-@Composable
-private fun StationCell(st: Station, onClick: () -> Unit) {
-    val color by animateColorAsState(statusColor(st), tween(500), label = "stColor")
-    // Пульсация для свободных — приглашает нажать
-    val pulse by rememberInfiniteTransition(label = "pulse").animateFloat(
-        1f, if (st.status == StationStatus.FREE.name) 1.05f else 1f,
-        infiniteRepeatable(tween(900), RepeatMode.Reverse), label = "pulseV"
-    )
-    Column(
-        Modifier
-            .scale(pulse)
-            .bouncyClickable(enabled = st.status == StationStatus.FREE.name, onClick = onClick)
-            .clip(RoundedCornerShape(14.dp))
-            .background(VenomSurface)
-            .border(2.dp, color, RoundedCornerShape(14.dp))
-            .padding(8.dp),
-        horizontalAlignment = Alignment.CenterHorizontally
-    ) {
-        Icon(
-            if (st.type == StationType.PS5.name) Icons.Filled.SportsEsports else Icons.Filled.Computer,
-            null, tint = color, modifier = Modifier.size(26.dp)
-        )
-        Text(st.title.ifBlank { "#${st.number}" }, color = VenomWhite, fontSize = 12.sp, fontWeight = FontWeight.Bold)
-        when {
-            st.status == StationStatus.BOOKED.name && st.bookedUntil != null ->
-                Text("до ${timeFmt.format(st.bookedUntil.toDate())}\n${st.bookedBy}",
-                    fontSize = 9.sp, color = BookedBlue, lineHeight = 10.sp)
-            st.status == StationStatus.BROKEN.name -> Text("сломан", fontSize = 9.sp, color = BrokenGray)
-            st.status == StationStatus.MAINTENANCE.name -> Text("тех.работы", fontSize = 9.sp, color = BrokenGray)
-        }
     }
 }
 

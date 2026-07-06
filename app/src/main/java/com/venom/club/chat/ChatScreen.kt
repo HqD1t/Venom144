@@ -3,7 +3,9 @@ package com.venom.club.chat
 import android.net.Uri
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
+import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -39,6 +41,8 @@ fun ChatScreen(me: UserProfile?, chatUid: String? = null, asAdmin: Boolean = fal
     val scope = rememberCoroutineScope()
     var text by remember { mutableStateOf("") }
     var pendingImage by remember { mutableStateOf<Uri?>(null) }
+    var actionMsg by remember { mutableStateOf<ChatMessage?>(null) }   // меню по долгому нажатию
+    var editMsg by remember { mutableStateOf<ChatMessage?>(null) }
     val listState = rememberLazyListState()
 
     val pickImage = rememberLauncherForActivityResult(ActivityResultContracts.GetContent()) {
@@ -61,7 +65,8 @@ fun ChatScreen(me: UserProfile?, chatUid: String? = null, asAdmin: Boolean = fal
             contentPadding = PaddingValues(12.dp),
             verticalArrangement = Arrangement.spacedBy(8.dp)) {
             items(messages, key = { it.id }) { m ->
-                MessageBubble(m, mine = if (asAdmin) m.fromAdmin else !m.fromAdmin)
+                val mine = if (asAdmin) m.fromAdmin else !m.fromAdmin
+                MessageBubble(m, mine = mine, onLongPress = { if (mine) actionMsg = m })
             }
         }
         pendingImage?.let {
@@ -90,10 +95,51 @@ fun ChatScreen(me: UserProfile?, chatUid: String? = null, asAdmin: Boolean = fal
             }) { Icon(Icons.AutoMirrored.Filled.Send, "Отправить", tint = VenomGreen) }
         }
     }
+
+    // Меню действий над своим сообщением
+    actionMsg?.let { m ->
+        AlertDialog(
+            onDismissRequest = { actionMsg = null },
+            containerColor = VenomSurface,
+            title = { Text("Сообщение", color = VenomWhite) },
+            text = { Text(m.text.take(80), color = BrokenGray) },
+            confirmButton = {
+                Row {
+                    if (m.text.isNotBlank()) TextButton({ editMsg = m; actionMsg = null }) {
+                        Text("✏️ Изменить", color = AquaPool)
+                    }
+                    TextButton({
+                        scope.launch { ChatRepo.deleteMessage(uid, m.id) }
+                        actionMsg = null
+                    }) { Text("🗑 Удалить", color = BusyRed) }
+                }
+            },
+            dismissButton = { TextButton({ actionMsg = null }) { Text("Отмена", color = BrokenGray) } }
+        )
+    }
+
+    // Редактирование сообщения
+    editMsg?.let { m ->
+        var newText by remember(m.id) { mutableStateOf(m.text) }
+        AlertDialog(
+            onDismissRequest = { editMsg = null },
+            containerColor = VenomSurface,
+            title = { Text("Изменить сообщение", color = VenomWhite) },
+            text = { OutlinedTextField(newText, { newText = it }, Modifier.fillMaxWidth()) },
+            confirmButton = {
+                TextButton(enabled = newText.isNotBlank(), onClick = {
+                    scope.launch { ChatRepo.editMessage(uid, m.id, newText.trim()) }
+                    editMsg = null
+                }) { Text("Сохранить", color = VenomGreen) }
+            },
+            dismissButton = { TextButton({ editMsg = null }) { Text("Отмена", color = BrokenGray) } }
+        )
+    }
 }
 
+@OptIn(ExperimentalFoundationApi::class)
 @Composable
-private fun MessageBubble(m: ChatMessage, mine: Boolean) {
+private fun MessageBubble(m: ChatMessage, mine: Boolean, onLongPress: () -> Unit = {}) {
     Row(Modifier.fillMaxWidth(), horizontalArrangement = if (mine) Arrangement.End else Arrangement.Start) {
         Column(
             Modifier
@@ -103,6 +149,7 @@ private fun MessageBubble(m: ChatMessage, mine: Boolean) {
                     bottomStart = if (mine) 16.dp else 4.dp,
                     bottomEnd = if (mine) 4.dp else 16.dp))
                 .background(if (mine) VenomGreen.copy(alpha = .9f) else VenomSurface)
+                .combinedClickable(onClick = {}, onLongClick = onLongPress)
                 .padding(10.dp)
         ) {
             if (m.imageUrl.isNotBlank()) {

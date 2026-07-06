@@ -19,7 +19,7 @@ import androidx.compose.ui.graphics.Color
 
 // Летний вайб VENOM: ядовитая зелень + лаймовые акценты на тёмной базе (как схема клуба)
 val VenomBlack = Color(0xFF0A120D)     // чёрный с зелёным подтоном
-val VenomSurface = Color(0xFF152219)   // поверхность карточек
+val VenomSurface = Color(0xFF1D2E23)   // поверхность карточек — светлее фона, не сливается
 val VenomGreen = Color(0xFF35D96B)     // главный ядовито-зелёный
 val LimeZest = Color(0xFFA8E063)       // сочный лайм
 val SummerYellow = Color(0xFFF6E27A)   // солнечный жёлтый
@@ -52,22 +52,12 @@ fun VenomTheme(content: @Composable () -> Unit) {
     MaterialTheme(colorScheme = DarkScheme, content = content)
 }
 
-/** Анимированный "летний" фон: медленно дышащий тёмно-зелёный градиент. */
-@Composable
-fun Modifier.summerBackground(): Modifier {
-    val t by rememberInfiniteTransition(label = "bg").animateFloat(
-        initialValue = 0f, targetValue = 1f,
-        animationSpec = infiniteRepeatable(tween(9000, easing = LinearEasing), RepeatMode.Reverse),
-        label = "bgShift"
-    )
-    return background(
-        Brush.linearGradient(
-            colors = listOf(VenomBlack, Color(0xFF0E2415), Color(0xFF123420), VenomBlack),
-            start = Offset(0f, 1400f * t),
-            end = Offset(1000f, 2400f * (1f - t))
-        )
-    )
-}
+/** "Летний" фон: статичный тёмно-зелёный градиент (без анимации — бережём FPS). */
+private val bgBrush = Brush.verticalGradient(
+    listOf(VenomBlack, Color(0xFF0E2415), Color(0xFF123420), VenomBlack)
+)
+
+fun Modifier.summerBackground(): Modifier = background(bgBrush)
 
 /** Кликабельность с пружинным сжатием — вместо обычного clickable. */
 fun Modifier.bouncyClickable(enabled: Boolean = true, onClick: () -> Unit): Modifier = composed {

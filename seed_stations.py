@@ -23,11 +23,14 @@ for n in range(11, 15):
 # ПК 15-17 — нижний ряд
 for n in range(15, 18):
     stations.append(dict(number=n, title=f"PC {n}", type="PC", zone="Общий зал"))
-# Приставки 18-21 — видеозал PS5
+# Консоли 18-21 — средний ряд
 for n in range(18, 22):
-    stations.append(dict(number=n, title=f"PS5 №{n-17}", type="PS5", zone="Видеозал PS5"))
+    stations.append(dict(number=n, title=f"Консоль {n}", type="PS5", zone="Консоли"))
 # 22 — VIP-место
 stations.append(dict(number=22, title="VIP 22", type="PC", zone="VIP"))
+# PS5 комнаты 23-26
+for n in range(23, 27):
+    stations.append(dict(number=n, title=f"{n-22} комната", type="PS5", zone="PS5 комнаты"))
 
 for s in stations:
     s.update(status="FREE", statusNote="", bookedUntil=None, bookedBy="", gizmoHostId=None)
