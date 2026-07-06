@@ -43,6 +43,7 @@ fun ProfileScreen(me: UserProfile?) {
 
     // Статистика из Gizmo через мини-сервер клуба
     LaunchedEffect(me?.phone) {
+        if (com.venom.club.data.Demo.enabled) { stats = com.venom.club.data.Demo.stats; return@LaunchedEffect }
         val phone = me?.phone ?: return@LaunchedEffect
         try {
             val token = Firebase.auth.currentUser?.getIdToken(false)?.await()?.token ?: return@LaunchedEffect
@@ -110,7 +111,7 @@ fun ProfileScreen(me: UserProfile?) {
                 TextButton({
                     scope.launch { ProfileRepo.updateNickname(name.trim()) }
                     editingName = false
-                }) { Text("Сохранить", color = SunsetOrange) }
+                }) { Text("Сохранить", color = VenomGreen) }
             },
             dismissButton = { TextButton({ editingName = false }) { Text("Отмена", color = BrokenGray) } }
         )
@@ -121,7 +122,7 @@ fun ProfileScreen(me: UserProfile?) {
 private fun StatCard(label: String, value: String, icon: androidx.compose.ui.graphics.vector.ImageVector) {
     Card(shape = RoundedCornerShape(16.dp), colors = CardDefaults.cardColors(containerColor = VenomSurface)) {
         Column(Modifier.padding(14.dp).width(88.dp), horizontalAlignment = Alignment.CenterHorizontally) {
-            Icon(icon, null, tint = SunsetOrange)
+            Icon(icon, null, tint = VenomGreen)
             Text(value, fontWeight = FontWeight.Black, color = VenomWhite, fontSize = 17.sp)
             Text(label, fontSize = 11.sp, color = BrokenGray)
         }

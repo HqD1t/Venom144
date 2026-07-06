@@ -9,6 +9,7 @@ import com.google.firebase.auth.PhoneAuthOptions
 import com.google.firebase.auth.PhoneAuthProvider
 import com.google.firebase.auth.ktx.auth
 import com.google.firebase.ktx.Firebase
+import com.venom.club.data.Demo
 import com.venom.club.data.ProfileRepo
 import com.venom.club.data.normalizePhone
 import com.venom.club.data.sha256
@@ -30,6 +31,12 @@ class AuthViewModel : ViewModel() {
     init {
         // Уже залогинен? Тогда сразу к пин-коду.
         if (Firebase.auth.currentUser != null) step.value = AuthStep.PIN_ENTER
+    }
+
+    /** Тестовый вход без регистрации: всё приложение работает на локальных демо-данных. */
+    fun enterDemoMode() {
+        Demo.enabled = true
+        step.value = AuthStep.DONE
     }
 
     fun sendCode(rawPhone: String, activity: Activity) {

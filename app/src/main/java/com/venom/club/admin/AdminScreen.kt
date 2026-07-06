@@ -90,7 +90,7 @@ private fun AdminPosts() {
                                     text = ""; image = null; busy = false
                                 }
                             },
-                            colors = ButtonDefaults.buttonColors(containerColor = SunsetOrange)
+                            colors = ButtonDefaults.buttonColors(containerColor = VenomGreen)
                         ) { Text("Опубликовать", color = VenomBlack) }
                     }
                 }
@@ -205,7 +205,7 @@ private fun AdminUsers() {
                 TextButton({
                     scope.launch { ProfileRepo.adminUpdateUser(u.uid, mapOf("adminNote" to note)) }
                     editNote = null
-                }) { Text("Сохранить", color = SunsetOrange) }
+                }) { Text("Сохранить", color = VenomGreen) }
             },
             dismissButton = { TextButton({ editNote = null }) { Text("Отмена", color = BrokenGray) } }
         )
@@ -261,7 +261,7 @@ private fun AdminChats(me: UserProfile) {
         Column {
             Row(Modifier.fillMaxWidth().background(VenomSurface).padding(horizontal = 8.dp),
                 verticalAlignment = Alignment.CenterVertically) {
-                TextButton({ openChat = null }) { Text("← Чаты", color = SunsetOrange) }
+                TextButton({ openChat = null }) { Text("← Чаты", color = VenomGreen) }
                 Spacer(Modifier.weight(1f))
                 IconButton({ scope.launch {
                     ChatRepo.setChatMeta(head.uid, favorite = !head.favorite)
@@ -334,9 +334,9 @@ private fun TemplatesDialog(onClose: () -> Unit) {
                 OutlinedTextField(newText, { newText = it }, placeholder = { Text("Новый шаблон...") })
                 TextButton(enabled = newText.isNotBlank(), onClick = {
                     scope.launch { ChatRepo.saveTemplate(null, newText.trim()); newText = "" }
-                }) { Text("+ Добавить", color = SunsetOrange) }
+                }) { Text("+ Добавить", color = VenomGreen) }
             }
         },
-        confirmButton = { TextButton(onClose) { Text("Готово", color = SunsetOrange) } }
+        confirmButton = { TextButton(onClose) { Text("Готово", color = VenomGreen) } }
     )
 }

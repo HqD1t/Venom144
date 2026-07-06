@@ -87,7 +87,7 @@ fun ChatScreen(me: UserProfile?, chatUid: String? = null, asAdmin: Boolean = fal
                 val t = text.trim(); val img = pendingImage
                 text = ""; pendingImage = null
                 scope.launch { ChatRepo.send(uid, me, t, img, asAdmin) }
-            }) { Icon(Icons.AutoMirrored.Filled.Send, "Отправить", tint = SunsetOrange) }
+            }) { Icon(Icons.AutoMirrored.Filled.Send, "Отправить", tint = VenomGreen) }
         }
     }
 }
@@ -102,7 +102,7 @@ private fun MessageBubble(m: ChatMessage, mine: Boolean) {
                     topStart = 16.dp, topEnd = 16.dp,
                     bottomStart = if (mine) 16.dp else 4.dp,
                     bottomEnd = if (mine) 4.dp else 16.dp))
-                .background(if (mine) SunsetOrange.copy(alpha = .9f) else VenomSurface)
+                .background(if (mine) VenomGreen.copy(alpha = .9f) else VenomSurface)
                 .padding(10.dp)
         ) {
             if (m.imageUrl.isNotBlank()) {

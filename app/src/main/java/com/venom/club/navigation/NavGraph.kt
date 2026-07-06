@@ -90,8 +90,8 @@ private fun VenomBottomBar(nav: NavHostController, me: UserProfile?) {
                 icon = { Icon(tab.icon, tab.label, Modifier.scale(scale)) },
                 label = { Text(tab.label) },
                 colors = NavigationBarItemDefaults.colors(
-                    selectedIconColor = SunsetOrange, selectedTextColor = SunsetOrange,
-                    indicatorColor = SunsetOrange.copy(alpha = .15f),
+                    selectedIconColor = VenomGreen, selectedTextColor = VenomGreen,
+                    indicatorColor = VenomGreen.copy(alpha = .15f),
                     unselectedIconColor = BrokenGray, unselectedTextColor = BrokenGray
                 )
             )

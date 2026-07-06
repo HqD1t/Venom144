@@ -112,10 +112,10 @@ private fun StationCell(st: Station, onClick: () -> Unit) {
     Column(
         Modifier
             .scale(pulse)
+            .bouncyClickable(enabled = st.status == StationStatus.FREE.name, onClick = onClick)
             .clip(RoundedCornerShape(14.dp))
             .background(VenomSurface)
             .border(2.dp, color, RoundedCornerShape(14.dp))
-            .clickable(enabled = st.status == StationStatus.FREE.name, onClick = onClick)
             .padding(8.dp),
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
@@ -164,7 +164,7 @@ fun BookingDialog(st: Station, onDismiss: () -> Unit, onConfirm: (Timestamp, Int
         },
         confirmButton = {
             TextButton({ onConfirm(Timestamp(Date(System.currentTimeMillis() + delayMin * 60_000L)), hours) }) {
-                Text("Забронировать", color = SunsetOrange, fontWeight = FontWeight.Bold)
+                Text("Забронировать", color = VenomGreen, fontWeight = FontWeight.Bold)
             }
         },
         dismissButton = { TextButton(onDismiss) { Text("Отмена", color = BrokenGray) } }

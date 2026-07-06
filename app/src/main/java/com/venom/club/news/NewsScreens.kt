@@ -53,16 +53,19 @@ fun NewsScreen(me: UserProfile?, onOpenComments: (String) -> Unit) {
         verticalArrangement = Arrangement.spacedBy(16.dp)
     ) {
         items(posts, key = { it.id }) { post ->
-            PostCard(
-                post = post, myUid = me?.uid ?: "",
-                onLike = {
-                    val uid = me?.uid
-                    if (uid != null) scope.launch {
-                        NewsRepo.toggleLike(post.id, uid, post.likes.contains(uid))
-                    }
-                },
-                onComments = { onOpenComments(post.id) }
-            )
+            // Плавное появление и перестановка карточек
+            Box(Modifier.animateItem()) {
+                PostCard(
+                    post = post, myUid = me?.uid ?: "",
+                    onLike = {
+                        val uid = me?.uid
+                        if (uid != null) scope.launch {
+                            NewsRepo.toggleLike(post.id, uid, post.likes.contains(uid))
+                        }
+                    },
+                    onComments = { onOpenComments(post.id) }
+                )
+            }
         }
     }
 }
@@ -177,7 +180,7 @@ fun CommentsScreen(postId: String, me: UserProfile?, onBack: () -> Unit) {
                         text = t, replyTo = replyTo?.id, replyToNickname = replyTo?.nickname))
                     text = ""; replyTo = null
                 }
-            }) { Icon(Icons.AutoMirrored.Filled.Send, "Отправить", tint = SunsetOrange) }
+            }) { Icon(Icons.AutoMirrored.Filled.Send, "Отправить", tint = VenomGreen) }
         }
     }
 }

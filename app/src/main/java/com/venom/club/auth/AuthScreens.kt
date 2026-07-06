@@ -2,7 +2,11 @@ package com.venom.club.auth
 
 import android.app.Activity
 import androidx.compose.animation.*
+import androidx.compose.animation.core.Spring
+import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.spring
 import androidx.compose.animation.core.tween
+import androidx.compose.ui.draw.scale
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
@@ -55,7 +59,8 @@ fun AuthFlow(activity: Activity, onDone: () -> Unit, vm: AuthViewModel = viewMod
                 }, label = "authStep"
             ) { s ->
                 when (s) {
-                    AuthStep.PHONE -> PhoneStep(loading) { vm.sendCode(it, activity) }
+                    AuthStep.PHONE -> PhoneStep(loading, onSend = { vm.sendCode(it, activity) },
+                        onDemo = { vm.enterDemoMode() })
                     AuthStep.CODE -> CodeStep(loading) { vm.confirmCode(it) }
                     AuthStep.TERMS -> TermsStep { vm.acceptTerms() }
                     AuthStep.PIN_CREATE -> PinStep("Придумай пин-код") { vm.createPin(it) }
@@ -73,7 +78,7 @@ fun AuthFlow(activity: Activity, onDone: () -> Unit, vm: AuthViewModel = viewMod
 }
 
 @Composable
-private fun PhoneStep(loading: Boolean, onSend: (String) -> Unit) {
+private fun PhoneStep(loading: Boolean, onSend: (String) -> Unit, onDemo: () -> Unit) {
     var phone by remember { mutableStateOf("8") }
     Column(horizontalAlignment = Alignment.CenterHorizontally) {
         Text("Вход по номеру телефона", color = VenomWhite, fontSize = 18.sp)
@@ -88,6 +93,10 @@ private fun PhoneStep(loading: Boolean, onSend: (String) -> Unit) {
         )
         Spacer(Modifier.height(16.dp))
         GradientButton("Получить код", loading) { onSend(phone) }
+        Spacer(Modifier.height(12.dp))
+        TextButton(onClick = onDemo) {
+            Text("🔧 Демо-режим — тест без регистрации", color = AquaPool, fontSize = 14.sp)
+        }
     }
 }
 
@@ -142,9 +151,14 @@ fun PinStep(title: String, onComplete: (String) -> Unit) {
         Row(horizontalArrangement = Arrangement.spacedBy(14.dp)) {
             repeat(4) { i ->
                 val filled = i < pin.length
+                // Точка пружинит, когда заполняется
+                val dotScale by animateFloatAsState(
+                    if (filled) 1.25f else 1f,
+                    spring(dampingRatio = Spring.DampingRatioMediumBouncy), label = "pinDot"
+                )
                 Box(
-                    Modifier.size(18.dp).clip(CircleShape)
-                        .background(if (filled) SunsetOrange else VenomSurface)
+                    Modifier.size(18.dp).scale(dotScale).clip(CircleShape)
+                        .background(if (filled) VenomGreen else VenomSurface)
                 )
             }
         }
@@ -185,7 +199,8 @@ fun GradientButton(text: String, loading: Boolean = false, enabled: Boolean = tr
         modifier = Modifier.fillMaxWidth().height(52.dp)
     ) {
         Box(
-            Modifier.fillMaxSize().background(SummerGradient, RoundedCornerShape(16.dp)),
+            // Бегущий блик по зелёному градиенту
+            Modifier.fillMaxSize().background(shimmerGradient(), RoundedCornerShape(16.dp)),
             contentAlignment = Alignment.Center
         ) {
             if (loading) CircularProgressIndicator(Modifier.size(24.dp), color = VenomBlack)
